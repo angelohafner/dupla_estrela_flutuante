@@ -30,12 +30,12 @@ if os.path.exists(file_path):
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown("### Latas")
+    st.markdown("### Internos")
     nr_lin_int = st.text_input("Quantidade Série", value="5")
     nr_lin_int = text_to_int(nr_lin_int)
     nr_col_int = st.text_input("Quantidade Paralelo", value="4")
     nr_col_int = text_to_int(nr_col_int)
-    st.markdown("### Internos")
+    st.markdown("### Externos")
     nr_lin_ext = st.text_input("Quantidade Série", value="3")
     nr_lin_ext = text_to_int(nr_lin_ext)
     nr_col_ext = st.text_input("Quantidade Paralelo", value="2")
@@ -47,8 +47,8 @@ with col2:
     potencia_nominal_trifásica = 1e6 * text_to_int(potencia_nominal_trifásica)
     frequencia_fudamental_Hz = st.text_input("Frequência Fundamental [Hz]", value="60")
     frequencia_fudamental_Hz = text_to_int(frequencia_fudamental_Hz)
-    tensao_nominal_fase_fase = st.text_input("Tensao de Linha [kV]", value="69")
-    tensao_nominal_fase_fase = 1e3*text_to_int(tensao_nominal_fase_fase)
+    tensao_nominal_fase_fase = st.number_input("Tensao de Linha [kV]", value=69.0, step=0.5)
+    tensao_nominal_fase_fase = 1e3*tensao_nominal_fase_fase
 
 a = 1 * np.exp(1j * 2 * np.pi / 3)
 omega = 2 * np.pi * frequencia_fudamental_Hz
@@ -58,14 +58,15 @@ corrente_fase_neutro = (potencia_nominal_trifásica / 3) / tensao_fase_neutro
 reatancia = tensao_fase_neutro / corrente_fase_neutro
 corrente_nominal_lata = corrente_fase_neutro
 cap_total = 1 / (omega * reatancia)
-cap_interna = cap_total * (nr_lin_int + nr_lin_ext) / (nr_col_int + nr_col_ext)
+cap_externa = (cap_total/2*nr_col_ext) * nr_lin_ext
+cap_interna = (cap_externa/nr_col_int) * nr_lin_int
 
 with col3:
     st.markdown(f"### Pré-processamento")
-    st.markdown(f"$$I_{{rated}}     = {EngNumber(corrente_fase_neutro)} \\, \\rm A $$")
-    st.markdown(f"$$X_{{rated}}     = {EngNumber(reatancia)} \\, \\Omega$$")
-    st.markdown(f"$$C_{{lata}}      = {EngNumber(cap_total)} \\rm F$$")
-    st.markdown(f"$$C_{{int}} = {EngNumber(cap_interna)} \\rm F$$")
+    st.markdown(f"$$I_{{ext}} = {EngNumber(corrente_fase_neutro)} \\, \\rm A $$")
+    st.markdown(f"$$X_{{ext}} = {EngNumber(reatancia)} \\, \\Omega$$")
+    st.markdown(f"$$C_{{ext}} = {EngNumber(cap_externa)/1e-6} \\rm \\mu F$$")
+    st.markdown(f"$$C_{{int}} = {EngNumber(cap_interna)/1e-6} \\rm \\mu F$$")
 
 des_int = 0.0
 
