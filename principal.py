@@ -19,7 +19,7 @@ def text_to_int(num):
     return saida
 
 # %%
-st.markdown("# Calculadora de Tensões em Elementos capacitivos")
+st.markdown("# Calculadora de Tensões em Circuitos Dupla Estrela não Aterrado")
 file_path = "correntes.xlsx"
 if os.path.exists(file_path):
     os.remove(file_path)
@@ -35,15 +35,13 @@ with col1:
     nr_lin_int = text_to_int(nr_lin_int)
     nr_col_int = st.text_input("Quantidade Paralelo", value="4")
     nr_col_int = text_to_int(nr_col_int)
-
-with col2:
     st.markdown("### Internos")
     nr_lin_ext = st.text_input("Quantidade Série", value="3")
     nr_lin_ext = text_to_int(nr_lin_ext)
     nr_col_ext = st.text_input("Quantidade Paralelo", value="2")
     nr_col_ext = text_to_int(nr_col_ext)
 
-with col3:
+with col2:
     st.markdown("### Sistema")
     potencia_nominal_trifásica = st.text_input("Potência Reativa Trifásica [MVAr]", value="10")
     potencia_nominal_trifásica = 1e6 * text_to_int(potencia_nominal_trifásica)
@@ -62,8 +60,8 @@ corrente_nominal_lata = corrente_fase_neutro
 cap_total = 1 / (omega * reatancia)
 cap_interna = cap_total * (nr_lin_int + nr_lin_ext) / (nr_col_int + nr_col_ext)
 
-with col1:
-    st.markdown(f"#### Calculado")
+with col3:
+    st.markdown(f"### Pré-processamento")
     st.markdown(f"$$I_{{rated}}     = {EngNumber(corrente_fase_neutro)} \\, \\rm A $$")
     st.markdown(f"$$X_{{rated}}     = {EngNumber(reatancia)} \\, \\Omega$$")
     st.markdown(f"$$C_{{lata}}      = {EngNumber(cap_total)} \\rm F$$")
@@ -75,21 +73,23 @@ des_int = 0.0
 wb, matriz = matriz_fases_ramos(nr_lin_ext=nr_lin_ext, nr_col_ext=nr_col_ext, nr_lin_int=nr_lin_int,
                                 nr_col_int=nr_col_int, cap_interna=cap_interna, des_int=des_int)
 wb.save('matriz_total.xlsx')
-with col2:
-    st.markdown("### Template de entrada")
 
-    with open("matriz_total.xlsx", "rb") as file:
-        st.download_button(label="Download Planilha Modelo de Capacitâncias", data=file, file_name="matriz_total.xlsx",
-                           mime="application/vnd.ms-excel")
-    uploaded_file = st.file_uploader("Faça upload da sua planilha Excel", type=["xlsx"])
-    if uploaded_file is not None:
-        # Salve o arquivo carregado temporariamente
-        with open("temp.xlsx", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        # Renomeie o arquivo temporário
-        if os.path.exists("matriz_total.xlsx"):
-            os.remove("matriz_total.xlsx")
-        os.rename("temp.xlsx", "matriz_total.xlsx")
+st.markdown("## Planilha com os valores das capacitâncias")
+st.markdown("Download da planilha para preenchimento das capacitâncias.")
+with open("matriz_total.xlsx", "rb") as file:
+    st.download_button(label="Download Planilha Modelo de Capacitâncias", data=file, file_name="matriz_total.xlsx",
+                       mime="application/vnd.ms-excel")
+
+st.markdown("Depois faça o upload dela preenchida.")
+uploaded_file = st.file_uploader("Faça upload da sua planilha Excel", type=["xlsx"])
+if uploaded_file is not None:
+    # Salve o arquivo carregado temporariamente
+    with open("temp.xlsx", "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    # Renomeie o arquivo temporário
+    if os.path.exists("matriz_total.xlsx"):
+        os.remove("matriz_total.xlsx")
+    os.rename("temp.xlsx", "matriz_total.xlsx")
 
 # %% ler matriz do excel, depois de editada manualmente
 data = load_excel_to_numpy('matriz_total.xlsx')
@@ -312,10 +312,29 @@ highlight_cells_above_threshold("tensoes.xlsx", ["internos-a_abs", "internos-b_a
 
 
 
-with col3:
-    st.markdown("### Grandezas nas latas e elementos")
-    with open("tensoes.xlsx", "rb") as file:
-        st.download_button(label="Download Tensões", data=file, file_name="tensoes.xlsx", mime="application/vnd.ms-excel")
-    with open("correntes.xlsx", "rb") as file:
-        st.download_button(label="Download Correntes", data=file, file_name="correntes.xlsx", mime="application/vnd.ms-excel")
 
+
+
+
+
+lista_temp_Tensoes = [V_a1_par_int_excel, V_a2_par_int_excel,
+                      V_b1_par_int_excel, V_b2_par_int_excel,
+                      V_c1_par_int_excel, V_c2_par_int_excel]
+
+lista_temp = ["fase a, ramo 1", "fase a, ramo 2",
+              "fase b, ramo 1", "fase b, ramo 2",
+              "fase c, ramo 1", "fase c, ramo 2"]
+
+st.markdown("## Resultados")
+pos = 0
+for elemento in lista_temp_Tensoes:
+    indice_max = np.argmax(np.abs(elemento))
+    linha, coluna = np.unravel_index(indice_max, elemento.shape)
+    st.markdown(f"Valor máximo: {EngNumber(np.abs(elemento[linha, coluna]))} V,  na posição: ({linha}, {coluna}), na {lista_temp[pos]}.")
+    pos = pos + 1
+
+st.markdown("#### Para mais detalhes baixe as planilhas")
+with open("tensoes.xlsx", "rb") as file:
+    st.download_button(label="Download Tensões", data=file, file_name="tensoes.xlsx", mime="application/vnd.ms-excel")
+with open("correntes.xlsx", "rb") as file:
+    st.download_button(label="Download Correntes", data=file, file_name="correntes.xlsx", mime="application/vnd.ms-excel")
